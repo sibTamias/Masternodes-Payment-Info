@@ -130,8 +130,8 @@ do
 			nvar=$(echo "$(cat ./nvar)")
 			myvar=$(echo -e "Masternode $ip  position $No_myMN_QUEUE_POSITION_to_pay/$no_mn")
 	curl -s \
-	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
-	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+	  --form-string "token=jdke8dmdjw3wws14b6pxy6t3ljoan" \
+	  --form-string "user=7fnjw5smgeyd7w4244sfbws6abd3ef" \
 	  --form-string "sound=bike" \
 	  --form-string "title=$myvar" \
 	  --form-string "message=$nvar" \
