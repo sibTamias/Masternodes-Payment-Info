@@ -1,6 +1,6 @@
 #!/bin/bash
 #set -x
-
+##
 > ./protxinfo
 > ./block_ip
 # echo $(dash-cli protx list|jq -r '.[]')  >> protxlist.txt
