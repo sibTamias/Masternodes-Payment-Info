@@ -46,12 +46,12 @@ fi
 # A function to print out each MN (protx) in order of next to the be paid (first) to last to be paid at the bottom.
 # First column is the line number, the second column is the protxhash, ....
 while read proTxHash registeredHeight PoSeBanHeight lastPaidHeight PoSeRevivedHeight payoutAddress service PoSePenalty junk;do
-	proTxHash=$proTxHash				# protx info текущей MN
-	registeredHeight=$registeredHeight	#  registeredHeight
-	PoSeBanHeight=$PoSeBanHeight			# PoSeBan
-	PoSeRevivedHeight=$PoSeRevivedHeight	# перерегистрация MN
-	lastPaidHeight=$lastPaidHeight	#  последней выплаты
-	payoutAddress=$payoutAddress
+	proTxHash=$proTxHash				# protx info current MN
+	registeredHeight=$registeredHeight	#   block registered Height
+	PoSeBanHeight=$PoSeBanHeight			# block PoSeBan 
+	PoSeRevivedHeight=$PoSeRevivedHeight	# # block revive  MN
+	lastPaidHeight=$lastPaidHeight	#   block last paymant
+	payoutAddress=$payoutAddress #  payout address
 	ipPort=$(awk -F: '{print $1}' <<< "$service")	# ip 
 	PoSePenalty=$PoSePenalty
 	if [ "$PoSeBanHeight" -eq -1 ];then
@@ -88,7 +88,7 @@ sorted_block_ip=$(cat ./tmp/sorted_block_ip)
 for (( n=0; n < ${#MY_MASTERNODES[*]}; n++ ))
 do	
 	m=$(( $n+1 ))
-	##### попутно присваиваем моим мастернодам номер в списке.
+	##### 
 	echo  "${MY_MASTERNODES[n]}" | awk '{ print $_ " " ( '$n'+1 ) }' >> ./tmp/myMN_num
 	myMN_cutProTxHash=$(echo ${MY_MASTERNODES[$n]} | cut -c1-4 )
 	#####
@@ -99,7 +99,7 @@ do
 		if [[ " ${MN_FILTERED[@]} " =~ " ${MY_MASTERNODES[$n]} " ]]; then
 			echo "$sorted_block_ip" | grep ${MY_MASTERNODES[$n]} | awk '{ print $3 }' >> ./tmp/my_payoutAddress
 		else
-			BODY+="MN($m) ProTx($myMN_cutProTxHash***) не найдена!. Проверь ProTxHash !.\n"
+			BODY+="MN($m) ProTx($myMN_cutProTxHash***) is mission! Check ProTxHash is correct!\n"
 		fi
 	fi
 done
@@ -121,7 +121,7 @@ while IFS= read -r line; do
 	ARRAY_PAYOUT_ADDRESS+=( "$line" )
 done <  ./tmp/sort_my_payoutAddress
 totalBalance=0
-# вычисляем суммарный баланс
+# total Balance
 for i in ${!ARRAY_PAYOUT_ADDRESS[@]}; 
 do
 	totalBalance=$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )")
@@ -160,7 +160,7 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 		else
 			myMN_lastPaidTstamp=$(printf "%dд" $day )	# если дней >0 то выводим дни 
 		fi
-	lastPaid_text="Выплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh \n"
+	lastPaid_text="Paymant was $myMN_lastPaidTstamp ago at bcock $myMN_LastPaidHeigh \n"
 	fi
 		mn_blocks_till_pyment=$(( $myMN_NewPaidHeigh - $height ))
 		f=$(echo "scale=0;$mn_blocks_till_pyment*$averageBlockTime/1"  | bc) # сек до выплаты
@@ -168,32 +168,32 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 		untilMidnight=$(($(date -d 'tomorrow 00:00:00' +%s) - $(date +%s))) # сек до полуночи 
 		PayTimeTilllMidnight=$(( $f - $untilMidnight ))  # из сек до оплаты вычитаем сек до полуночи, 
 			if [ "$PayTimeTilllMidnight" -lt 0 ]; then # если <0 , то выплата до плоyночи сегодня
-				d="Выплата сегодня в"
+				d="Paymant today at"
 				myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-				line_one="блок"
+				line_one="block"
 				secTillPayment=$(( $myMN_NewPaidTime- $nowEpoch )) 
 				if [ $secTillPayment -lt 14400 ]; then
-				./masternodes_info_update_RU_test.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
+				./masternodes_info_update_EN.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
 				fi					
 			else 
 				if [ "$PayTimeTilllMidnight" -gt 172800 ]; then   # если >24 часа т е за послезавтра )
 					unset d 
-					line_one="до выплаты в блоке"
+					line_one="until paymant in block"
 					((sec=f%60, f/=60, min=f%60, f/=60, hrs=f%24, f/=24, day=f%24))
 						if [ "$day" -gt 4 ]; then
-					myMN_leftTillPaymentTstamp=$(printf "%d дней" $day)
+					myMN_leftTillPaymentTstamp=$(printf "%d days" $day)
 						else 
-					myMN_leftTillPaymentTstamp=$(printf "%d дня" $day)
+					myMN_leftTillPaymentTstamp=$(printf "%d days" $day)
 						fi
 				else
 					if [ "$PayTimeTilllMidnight" -gt 86400 ]; then
-						d="Выплата послезавтра в"
+					d="Payment day after tomorrow at"
 						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-						line_one="в блоке"
+						line_one="in"
 					else
-						d="Выплата завтра в"
+					d="Payment tomorrow at"
 						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-						line_one="в блоке"
+						line_one="in"
 					fi
 				fi
 			fi	
@@ -201,9 +201,9 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 			let _left=50-$_done  
 			_done=$(printf "%${_done}s")
 			_left=$(printf "%${_left}s")
-	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%%\n$lastPaid_textБаланс: $myMN_balance/$totalBalance Dash  1Dash=$rateDashUSD$" > ./tmp/nvar		
+	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%%\n$lastPaid_textBalance: $myMN_balance/$totalBalance Dash  1Dash=$rateDashUSD$" > ./tmp/nvar		
 			nvar=$(echo "$(cat ./tmp/nvar)")			
-			myvar=$(echo -e "MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash*")
+			myvar=$(echo -e "MN$pass_myMN_num position $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash*")
 ## RU
 	curl -s \
 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
