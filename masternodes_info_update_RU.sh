@@ -1,25 +1,13 @@
 #!/bin/bash
 # set -x
 
-# echo "count=$1"
-# echo "myMN_payoutAddress=$2"
-# echo "myMN_balance=$3"
-# echo "totalBalance=$4"
-# echo "ip=$5"
-# echo "myMN_cutProTxHash=$6"
-# echo "pass_myMN_num_7=$7"
-# echo "mnProTxHash=$8"
-# echo "position=$9"
-
+echo "update!"
 echo $1
 if [[ $1 -gt 400 ]]; then
 		count=$(( $1 - 400 ))
 		sleep $count
 fi
-
-
 MY_MASTERNODES=($8)
-
 all_mns_list=$(dash-cli protx list registered 1)
 > ./tmp/block_ip_$7
 > ./tmp/poseban_ip_$7
@@ -80,7 +68,7 @@ do
 		if [[ " ${MN_FILTERED[@]} " =~ " ${MY_MASTERNODES[$n]} " ]]; then
 			echo "$sorted_block_ip" | grep ${MY_MASTERNODES[$n]} | awk '{ print $3 }' >> ./tmp/my_up_payoutAddress_$7
 		else
-			BODY+="MN($m) ProTx($myMN_cutProTxHash***) не найдена!. Проверь ProTxHash !.\n"
+			BODY+="MN($m) ProTx($myMN_cutProTxHash***) не найдена! Проверь ProTxHash !\n"
 		fi
 	fi
 done
@@ -101,107 +89,19 @@ ARRAY_PAYOUT_ADDRESS=()
 while IFS= read -r line; do
 	ARRAY_PAYOUT_ADDRESS+=( "$line" )
 done <  ./tmp/sort_up_my_payoutAddress
-# totalBalance=0
-# вычисляем суммарный баланс
-# for i in ${!ARRAY_PAYOUT_ADDRESS[@]}; 
-# do
-# 	totalBalance=$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )")
-# done
-######
+#
 height=$(dash-cli getblockcount)
 for (( n=0; n < ${#MN_FILTERED[*]}; n++ ))
 do
 	pass_myMN_num=$(echo "$myMN_num" | grep ${MN_FILTERED[$n]} | awk '{ print $2 }')
 	infoMyMN_QeuePositionToPayment=$(echo "$sorted_block_ip" | grep ${MN_FILTERED[$n]}  | awk '{ print $_ " " ( $6 - '$height' ) }')
 echo "infoMyMN_QeuePositionToPayment=$infoMyMN_QeuePositionToPayment"
-	position=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $7 }')
-echo "position2=$position"
-	percent=$(echo "scale=1;100*( $totalAmountMN - $position )/$totalAmountMN" | bc -l )
-	percentInt=$(echo "$percent" | awk '{print int($1+0.5)}')
 	ip=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $4 }')
-	myMN_LastPaidHeigh=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $5 }')
-	myMN_NewPaidHeigh=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $6 }') 
-echo "Update_myMN_NewPaidHeigh=$myMN_NewPaidHeigh"
+	myMN_NewPaidHeigh=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $6 }') # echo "Update_myMN_NewPaidHeigh=$myMN_NewPaidHeigh"
 	myMN_payoutAddress=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $3 }')
 	myMN_cutProTxHash=$(echo ${MN_FILTERED[$n]} | cut -c1-4 )
-	nowEpoch=`date +%s`
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
-	averageBlockTime=157.5
-####### RU
-echo "myMN_LastPaidHeigh= $myMN_LastPaidHeigh"
-	if [ "$myMN_LastPaidHeigh" -eq 0 ];then
-		lastPaid_text="Выплаты еще не было \n"
-	else	
-	myMN_LastPaidTime=$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getblocktime&height=$myMN_LastPaidHeigh")")
-echo "myMN_LastPaidTime=$myMN_LastPaidTime"
-	l=$(( $nowEpoch - $myMN_LastPaidTime ))
-		((sec=l%60, l/=60, min=l%60, l/=60, hrs=l%24, l/=24, day=l%24))
-		if [ $day -eq 0 ]; then 
-			myMN_lastPaidTstamp=$(printf "%dч%02dм" $hrs $min)	# если дней =0 то выводим часы и минуты
-		else
-			myMN_lastPaidTstamp=$(printf "%dд" $day)	# если дней >0 то выводим дни
-		fi
-	lastPaid_text="Выплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh \n"
-	fi
-		mn_blocks_till_pyment=$(( $myMN_NewPaidHeigh - $height ))
-		f=$(echo "scale=0;$mn_blocks_till_pyment*$averageBlockTime/1"  | bc)
-		myMN_NewPaidTime=$(( $nowEpoch + $f ))
-		untilMidnight=$(($(date -d 'tomorrow 00:00:00' +%s) - $(date +%s)))
-		PayTimeTilllMidnight=$(( $f - $untilMidnight )) 
-			if [ "$PayTimeTilllMidnight" -lt 0 ]; then
-				d="Выплата сегодня в"
-				myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-				line_one="блок"
-				secTillPayment=$(( $myMN_NewPaidTime- $nowEpoch ))
-				if [ $secTillPayment -lt 14500 ]; then
- 				./win_RU_2.sh $secTillPayment $myMN_payoutAddress $3 $4 $ip $myMN_cutProTxHash $7 $myMN_NewPaidHeigh &
- 				fi					
-			else 
-				if [ "$PayTimeTilllMidnight" -gt 86400 ]; then
-					unset d 
-					line_one="до выплаты в блоке"
-					((sec=f%60, f/=60, min=f%60, f/=60, hrs=f%24, f/=24, day=f%24))
-						if [ "$hrs" -gt 4 ]; then
-							line_hrs="%02d часов"
-						else 
-							if [ "$hrs" -eq 1 ]; then
-								line_hrs="%02d час"
-							else
-								hrs="%02d часа"
-							fi
-						fi
-						if [ "$day" -gt 4 ]; then
-					myMN_leftTillPaymentTstamp=$(printf "%d дней" $day)
-						else 
-							if [ "$day" -eq 1 ]; then
-					myMN_leftTillPaymentTstamp=$(printf "%d день $line_hrs" $day $hrs)
-							else
-					myMN_leftTillPaymentTstamp=$(printf "%d дня" $day)
-							fi
-						fi
-				else
-					d="Выплата завтра в"
-					myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-					line_one="в блоке"
-				fi
-			fi
-			let _done=($percentInt*5)/10 
-			let _left=50-$_done 
-			_done=$(printf "%${_done}s")
-			_left=$(printf "%${_left}s")
-	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%%\n$lastPaid_textБаланс: $3/$4 Dash  1Dash=$rateDashUSD$" > ./tmp/nvar		
-			nvar=$(echo "$(cat ./tmp/nvar)")			
-# 			pass_myMN_num=$(echo "$myMN_num" | grep ${MN_FILTERED[$n]} | awk '{ print $2 }')
-			myvar=$(echo -e "MN$7 обновление $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash*")
-## RU
-	curl -s \
-	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
-	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
-	  --form-string "sound=bike" \
-	  --form-string "title=$myvar" \
-	  --form-string "message=$nvar" \
-  	https://api.pushover.net/1/messages.json &> /dev/null 
 done
 warning=$(printf "$BODY")
 curl -s \
@@ -211,3 +111,62 @@ curl -s \
   --form-string "title=Warning!" \
   --form-string "message=$warning" \
 https://api.pushover.net/1/messages.json &> /dev/null 
+sleep 1
+a=($(dash-cli masternode winners 1))
+echo "winners=${a[@]}"
+b=$(dash-cli getblockcount)
+echo "getblockcount=$b"
+echo "myMN_NewPaidHeigh=$myMN_NewPaidHeigh"
+echo "myMN_payoutAddress=$myMN_payoutAddress"
+if [[ ${a[@]} =~ $myMN_payoutAddress ]]; then 
+echo "проверяем наличие адреса в списке winners"
+# пока myMN_payoutAddress не появится в текущем блоке
+# следим за текущим блоком и предыдущим , где уже бвла оплата , т к за <15 сек может пройти еще один блок и скрипт его пропустит )
+		until [[ $(echo ${a[@]} | awk '{print$2$3$4$5$6}') =~ $myMN_NewPaidHeigh'":"'$myMN_payoutAddress ]]#########
+		do
+		echo "sleep10 $(dash-cli getblockcount)"
+			sleep 10
+			a=($(dash-cli masternode winners 1))
+		done
+		echo "найден!"
+else
+	echo "myMN_payoutAddress не найден"
+   	title="error"
+   	message="error"
+   	curl -s \
+	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
+	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+	  --form-string "sound=bike" \
+	  --form-string "title=$title" \
+	  --form-string "message=$message" \
+	 https://api.pushover.net/1/messages.json &> /dev/null 
+fi
+ 	b=$(dash-cli getblockcount) #текущий блок
+ 	c=$(dash-cli getblockhash $b) #protx блока
+	dataPayments=$(dash-cli masternode payments $c) 
+	echo "dataPayments=$dataPayments"
+while read LINE; do
+echo "читаем информацию о выплате"
+  	height=$(echo -e "$LINE"  | awk '{print $1}') # номер блока
+ 	blockhash=$(echo -e "$LINE"  | awk '{print $2}') # protx блока	 
+	proTxHash=$(echo -e "$LINE"  | awk '{print $3}') # protx мастерноды зарегитрировавшей блок в блокчейне
+	address=$(echo -e "$LINE"  | awk '{print $4}') # адрес выплаты
+	amount=$(echo -e "$LINE"  | awk '{print $5}') # величина выплаты  
+# \(.masternodes[] | .payees[0] | .amount Пример блок: 1505190 - в случае двух адресов на выплату , выбираем первый.
+done < <(jq -r '.[]|"\(.height) \(.blockhash) \(.masternodes[] | .proTxHash) \(.masternodes[] | .payees[0] | .address) \(.masternodes[] | .payees[0] | .amount)"' <<< "$dataPayments")
+    title=$(echo -e "Выплата! Мн$pass_myMN_num $ip\nProTx-$myMN_cutProTxHash*")
+	pymentAmountDash=$(echo "scale=1;$amount/100000000" | bc  )  
+	mnBalance=$(echo "( $myMN_balance + $pymentAmountDash )" | bc )
+	message=$(echo -e "Зачислено $pymentAmountDash Dash в текущем блоке $height\nБаланс $mnBalance Dash  1Dash=$rateDashUSD$")
+	curl -s \
+	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
+	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+	  --form-string "sound=bike" \
+	  --form-string "title=$title" \
+	  --form-string "message=$message" \
+	 https://api.pushover.net/1/messages.json &> /dev/null 
+
+
+
+
+
