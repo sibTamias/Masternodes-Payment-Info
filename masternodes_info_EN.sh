@@ -1,32 +1,39 @@
 #!/bin/bash
 #set -x
-####
+
 MY_MASTERNODES=(
 237fdf83eff8ec26dce4c2c6966e1363a5a311b1a2a8f6d5a61e2516fed70d83
-# 25e195c12334573e6f19505155efd12f4c22535a504f78ab40770de99fc10126
-# a3cf9812bf59e07befe144e46dca847a2ca12e23360c8a8a4004323820003e9e
-# 1779a6d273177531dd7fbb397b609ccffdbe391adae8f1bdcc4c7b002c29658a
-# d38fb2f9303b578b1d47d726581c83291c661bef7291eeb017f32390d160b640
-# 4797d47cfffae5f0b200f4964f76d824f16fc8ff0569f248049e47ac67469ea7
-# 4a450b8c0a2c4615cc9f6bf35689f534e4cc75335a443f85b5deb977af78919d
-# 75d3bf6b4d6a5844bef4fd7dc21953ebaeddfac50a8c8d25ec8bb7aef4f0b72f
-# e5deb272685095cb4ce916337a86f4cf41ac3e747a1cf6294906a0821aaab5a3
-# 08f8825860a3806732080298f52260ab7931845709257d6bcf60b56e7bc5c8dd
-# ca15a05d139ab7773d74bf366cf8dac17491aaba2db6d98ca7932492176b423b
+f2f0400ecc79c2e2944c5af879c9de434e637edd79fc8b85820d86ebc6c70f47
 )
 # Checks that the required software is installed on this machine.
 bc -v >/dev/null 2>&1 || progs+=" bc"
 jq -V >/dev/null 2>&1 || progs+=" jq"
 
 if [[ -n $progs ]];then
-	text="Missing applications on your system, please run\n\n"
-	text+="\tsudo apt install $progs\n\nbefore running this program again."
-	echo -e "$text" >&2
+	text="Missing applications on your system, please run\n"
+	text+="\tsudo apt install $progs\nbefore running this program again."
+	message=$(echo -e "$text")
+curl -s \
+  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
+  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+  --form-string "sound=bike" \
+  --form-string "title=Warning!" \
+  --form-string "message=$message" \
+https://api.pushover.net/1/messages.json &> /dev/null 
+
 	exit 1
 fi
 all_mns_list=$(dash-cli protx list registered 1)
 if (( $? != 0 ));then
-	echo "Problem running dash-cli, make sure it is in your path and working..."
+	warning="Problem running dash-cli, make sure it is in your path and working..."
+curl -s \
+  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
+  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+  --form-string "sound=bike" \
+  --form-string "title=Warning!" \
+  --form-string "message=$warning" \
+https://api.pushover.net/1/messages.json &> /dev/null 
+
 	exit 1
 fi
 
@@ -65,6 +72,7 @@ done < <(jq -r '.[]|"\(.proTxHash) \(.state.registeredHeight) \(.state.PoSeBanHe
 
 block_ip=$(cat ./tmp/block_ip)
 totalAmountMN=$(echo "$block_ip" | wc -l)
+# queue_length=$(wc -l <<< "$orderedPaymentList")
 endLastPaidHeight=$(echo "$(sort -k1 ./tmp/block_ip)" | (awk 'NR == 1{print $1}'))
 firstLastPaidHeight=$(echo "$(sort -k1 ./tmp/block_ip)"  | sed '$!d' | awk '{ print $1 }')
 no_blocks_in_queue=$(( $echo $firstLastPaidHeight - $endLastPaidHeight + 1 ))	
@@ -91,7 +99,7 @@ do
 		if [[ " ${MN_FILTERED[@]} " =~ " ${MY_MASTERNODES[$n]} " ]]; then
 			echo "$sorted_block_ip" | grep ${MY_MASTERNODES[$n]} | awk '{ print $3 }' >> ./tmp/my_payoutAddress
 		else
-			BODY+="MN($m) ProTx($myMN_cutProTxHash***) is mission! Check ProTxHash is correct!\n"
+			BODY+="MN($m) ProTx($myMN_cutProTxHash***) не найдена!. Проверь ProTxHash !.\n"
 		fi
 	fi
 done
@@ -138,21 +146,21 @@ echo "position1=$position"
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
 	averageBlockTime=157.5
-####### EN
+####### RU
 echo "myMN_LastPaidHeigh= $myMN_LastPaidHeigh"
 	if [ "$myMN_LastPaidHeigh" -eq 0 ];then
-		lastPaid_text="payments had not yet been made\n"
+		lastPaid_text="Выплаты еще не было \n"
 	else	
 	myMN_LastPaidTime=$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getblocktime&height=$myMN_LastPaidHeigh")")
 echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 	l=$(( $nowEpoch - $myMN_LastPaidTime ))
 		((sec=l%60, l/=60, min=l%60, l/=60, hrs=l%24, l/=24, day=l%24))
 		if [ $day -eq 0 ]; then 
-			myMN_lastPaidTstamp=$(printf "%dd%02dh" $hrs $min)	# если дней =0 то выводим часы и минуты
+			myMN_lastPaidTstamp=$(printf "%dч%02dм" $hrs $min)	# если дней =0 то выводим часы и минуты
 		else
-			myMN_lastPaidTstamp=$(printf "%dd" $day )	# если дней >0 то выводим дни 
+			myMN_lastPaidTstamp=$(printf "%dд" $day )	# если дней >0 то выводим дни 
 		fi
-	lastPaid_text="Paymant was $myMN_lastPaidTstamp ago in block $myMN_LastPaidHeigh \n"
+	lastPaid_text="Выплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh \n"
 	fi
 		mn_blocks_till_pyment=$(( $myMN_NewPaidHeigh - $height ))
 		f=$(echo "scale=0;$mn_blocks_till_pyment*$averageBlockTime/1"  | bc) # сек до выплаты
@@ -160,54 +168,42 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 		untilMidnight=$(($(date -d 'tomorrow 00:00:00' +%s) - $(date +%s))) # сек до полуночи 
 		PayTimeTilllMidnight=$(( $f - $untilMidnight ))  # из сек до оплаты вычитаем сек до полуночи, 
 			if [ "$PayTimeTilllMidnight" -lt 0 ]; then # если <0 , то выплата до плоyночи сегодня
-				d="Paymant today at"
+				d="Выплата сегодня в"
 				myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-				line_one="block"
+				line_one="блок"
 				secTillPayment=$(( $myMN_NewPaidTime- $nowEpoch )) 
 				if [ $secTillPayment -lt 14400 ]; then
-				./masternodes_info_update_EN_2.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
+				./masternodes_info_update_RU_test.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
 				fi					
 			else 
-				if [ "$PayTimeTilllMidnight" -gt 86400 ]; then   # если >24 часа т е за послезавтра )
+				if [ "$PayTimeTilllMidnight" -gt 172800 ]; then   # если >24 часа т е за послезавтра )
 					unset d 
-					line_one="until paymant in block"
+					line_one="до выплаты в блоке"
 					((sec=f%60, f/=60, min=f%60, f/=60, hrs=f%24, f/=24, day=f%24))
-						if [ "$hrs" -gt 4 ]; then
-							line_hrs="%02d hours"
-						else 
-							if [ "$hrs" -eq 1 ]; then
-								line_hrs="%02d hour"
-							else
-								hrs="%02d hour"
-							fi
-						fi
 						if [ "$day" -gt 4 ]; then
-					myMN_leftTillPaymentTstamp=$(printf "%d days" $day)
+					myMN_leftTillPaymentTstamp=$(printf "%d дней" $day)
 						else 
-							if [ "$day" -eq 1 ]; then
-# 					myMN_leftTillPaymentTstamp=$(printf "%d день $line_hrs" $day $hrs)
-					d="Payment day after tomorrow at"
-					myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-					line_one="in"
-							else
-					myMN_leftTillPaymentTstamp=$(printf "%d days" $day)
-							fi
+					myMN_leftTillPaymentTstamp=$(printf "%d дня" $day)
 						fi
-				else # если >0 но  ( те PayTimeTilllMidnight >0 но < 24 часа ( до полуночи завтра) )
-					d="Payment tomorrow at"
-					myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-					line_one="in"
+				else
+					if [ "$PayTimeTilllMidnight" -gt 86400 ]; then
+						d="Выплата послезавтра в"
+						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
+						line_one="в блоке"
+					else
+						d="Выплата завтра в"
+						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
+						line_one="в блоке"
+					fi
 				fi
-			fi
+			fi	
 			let _done=($percentInt*5)/10 
-			let _left=50-$_done 
+			let _left=50-$_done  
 			_done=$(printf "%${_done}s")
 			_left=$(printf "%${_left}s")
-# 			lastPaid_text="Выплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh \n"
-	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%%\n$lastPaid_text Balance: $myMN_balance/$totalBalance Dash  1Dash=$rateDashUSD$" > ./tmp/nvar		
+	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%%\n$lastPaid_textБаланс: $myMN_balance/$totalBalance Dash  1Dash=$rateDashUSD$" > ./tmp/nvar		
 			nvar=$(echo "$(cat ./tmp/nvar)")			
-# 			pass_myMN_num=$(echo "$myMN_num" | grep ${MN_FILTERED[$n]} | awk '{ print $2 }')
-			myvar=$(echo -e "MN$pass_myMN_num position $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash*")
+			myvar=$(echo -e "MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash*")
 ## RU
 	curl -s \
 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
@@ -216,25 +212,6 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 	  --form-string "title=$myvar" \
 	  --form-string "message=$nvar" \
   	https://api.pushover.net/1/messages.json &> /dev/null   	
-#   progressLength=50
-# 	progressMade=$(echo "scale=2;($totalAmountMN-$position)/$totalAmountMN*$progressLength"|bc|awk '{printf("%d\n",$1 + 0.5)}')
-# 	progressRemaining=$((progressLength-progressMade))
-# 	progressBar="["
-#  	for((i=0; i<progressMade; i++));do progressBar+='|';done
-# 	for((i=0; i<progressRemaining; i++));do progressBar+=':';done
-# 	progressBar+="]"
-# # 	progressPercent=$(printf '%0.2f' $(echo "scale=4;($numMyMN-$position)/$numMyMN*100"|bc))
-# 
-# 	printf "$d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n$progressBar $percent%%\nВыплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh \nБаланс: $myMN_balance/$totalBalance Dash  1Dash=$rateDashUSD$" > ./tmp/nvar1	
-# nvar1=$(echo "$(cat ./tmp/nvar1)")
-# 	curl -s \
-# 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
-# 	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
-# 	  --form-string "sound=bike" \
-# 	  --form-string "title=$myvar" \
-# 	  --form-string "message=$nvar1" \
-#   	https://api.pushover.net/1/messages.json &> /dev/null 
-  	
 done
 warning=$(printf "$BODY")
 curl -s \
