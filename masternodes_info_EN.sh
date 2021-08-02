@@ -146,19 +146,19 @@ echo "position1=$position"
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
 	averageBlockTime=157.5
-####### RU
+####### EN
 echo "myMN_LastPaidHeigh= $myMN_LastPaidHeigh"
 	if [ "$myMN_LastPaidHeigh" -eq 0 ];then
-		lastPaid_text="Выплаты еще не было \n"
+		lastPaid_text="payments had not yet been made\n"
 	else	
 	myMN_LastPaidTime=$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getblocktime&height=$myMN_LastPaidHeigh")")
 echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 	l=$(( $nowEpoch - $myMN_LastPaidTime ))
 		((sec=l%60, l/=60, min=l%60, l/=60, hrs=l%24, l/=24, day=l%24))
 		if [ $day -eq 0 ]; then 
-			myMN_lastPaidTstamp=$(printf "%dч%02dм" $hrs $min)	# если дней =0 то выводим часы и минуты
+			myMN_lastPaidTstamp=$(printf "%dh%02dm" $hrs $min)	# если дней =0 то выводим часы и минуты
 		else
-			myMN_lastPaidTstamp=$(printf "%dд" $day )	# если дней >0 то выводим дни 
+			myMN_lastPaidTstamp=$(printf "%dd" $day )	# если дней >0 то выводим дни 
 		fi
 	lastPaid_text="Paymant was $myMN_lastPaidTstamp ago at bcock $myMN_LastPaidHeigh \n"
 	fi
