@@ -125,6 +125,8 @@ totalBalance=0
 for i in ${!ARRAY_PAYOUT_ADDRESS[@]}; 
 do
 	totalBalance=$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )")
+# 	$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )") > ./tmp/totalBalance
+
 done
 ######
 height=$(dash-cli getblockcount)
@@ -173,7 +175,7 @@ echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 				line_one="блок"
 				secTillPayment=$(( $myMN_NewPaidTime- $nowEpoch )) 
 				if [ $secTillPayment -lt 14400 ]; then
-				./masternodes_info_update_RU_test.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
+				./masternodes_info_update_RU.sh $secTillPayment $myMN_payoutAddress $myMN_balance $totalBalance $ip $myMN_cutProTxHash $pass_myMN_num ${MN_FILTERED[$n]} &
 				fi					
 			else 
 				if [ "$PayTimeTilllMidnight" -gt 172800 ]; then   # если >24 часа т е за послезавтра )

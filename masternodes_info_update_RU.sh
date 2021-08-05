@@ -102,6 +102,7 @@ echo "infoMyMN_QeuePositionToPayment=$infoMyMN_QeuePositionToPayment"
 	myMN_cutProTxHash=$(echo ${MN_FILTERED[$n]} | cut -c1-4 )
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
+	echo $(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )") > ./tmp/totalBalance
 done
 warning=$(printf "$BODY")
 curl -s \
@@ -122,7 +123,7 @@ if [[ ${a[@]} =~ $myMN_payoutAddress ]]; then
 echo "проверяем наличие адреса в списке winners"
 # пока myMN_payoutAddress не появится в текущем блоке
 # следим за текущим блоком и предыдущим , где уже бвла оплата , т к за <15 сек может пройти еще один блок и скрипт его пропустит )
-		until [[ $(echo ${a[@]} | awk '{print$2$3$4$5$6}') =~ $myMN_NewPaidHeigh'":"'$myMN_payoutAddress ]]#########
+		until [[ $(echo ${a[@]} | awk '{print$2$3$4$5$6}') =~ $myMN_NewPaidHeigh'":"'$myMN_payoutAddress ]]
 		do
 		echo "sleep10 $(dash-cli getblockcount)"
 			sleep 10
@@ -157,7 +158,9 @@ done < <(jq -r '.[]|"\(.height) \(.blockhash) \(.masternodes[] | .proTxHash) \(.
     title=$(echo -e "Выплата! Мн$pass_myMN_num $ip\nProTx-$myMN_cutProTxHash*")
 	pymentAmountDash=$(echo "scale=1;$amount/100000000" | bc  )  
 	mnBalance=$(echo "( $myMN_balance + $pymentAmountDash )" | bc )
-	message=$(echo -e "Зачислено $pymentAmountDash Dash в текущем блоке $height\nБаланс $mnBalance Dash  1Dash=$rateDashUSD$")
+	echo $(( $(cat ./tmp/totalBalance) + $pymentAmountDash )) > ./tmp/totalBalance
+	totalBalance=$(cat ./tmp/totalBalance)
+	message=$(echo -e "Зачислено $pymentAmountDash Dash в текущем блоке $height\nБаланс $mnBalance/$totalBalance Dash  1Dash=$rateDashUSD$")
 	curl -s \
 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
 	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
