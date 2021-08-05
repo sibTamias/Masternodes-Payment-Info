@@ -101,8 +101,7 @@ echo "infoMyMN_QeuePositionToPayment=$infoMyMN_QeuePositionToPayment"
 	myMN_payoutAddress=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $3 }')
 	myMN_cutProTxHash=$(echo ${MN_FILTERED[$n]} | cut -c1-4 )
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
-	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
-	echo $(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )") > ./tmp/totalBalance
+# 	myMN_LastPaidTime=$(echo "$(dash-cli getblock $( dash-cli getblockhash $myMN_LastPaidHeigh) | jq -r  .time)")
 done
 warning=$(printf "$BODY")
 curl -s \
@@ -155,11 +154,11 @@ echo "читаем информацию о выплате"
 	amount=$(echo -e "$LINE"  | awk '{print $5}') # величина выплаты  
 # \(.masternodes[] | .payees[0] | .amount Пример блок: 1505190 - в случае двух адресов на выплату , выбираем первый.
 done < <(jq -r '.[]|"\(.height) \(.blockhash) \(.masternodes[] | .proTxHash) \(.masternodes[] | .payees[0] | .address) \(.masternodes[] | .payees[0] | .amount)"' <<< "$dataPayments")
-    title=$(echo -e "Выплата! Мн$pass_myMN_num $ip\nProTx-$myMN_cutProTxHash*")
+    title=$(echo -e "MN$pass_myMN_num $ip\nProTx-$myMN_cutProTxHash*")
 	pymentAmountDash=$(echo "scale=1;$amount/100000000" | bc  )  
-	mnBalance=$(echo "( $myMN_balance + $pymentAmountDash )" | bc )
-	echo $(( $(cat ./tmp/totalBalance) + $pymentAmountDash )) > ./tmp/totalBalance
-	totalBalance=$(cat ./tmp/totalBalance)
+	totalBalance=$(echo "( $3 + $pymentAmountDash)" | bc )
+# 	echo "totalBalance_2_162=$totalBalance"
+	mnBalance=$(echo "( $3 + $pymentAmountDash )" | bc )
 	message=$(echo -e "Зачислено $pymentAmountDash Dash в текущем блоке $height\nБаланс $mnBalance/$totalBalance Dash  1Dash=$rateDashUSD$")
 	curl -s \
 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
