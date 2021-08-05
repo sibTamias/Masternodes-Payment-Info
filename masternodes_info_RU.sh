@@ -1,9 +1,16 @@
 #!/bin/bash
 #set -x
 
+# MY_MASTERNODES=($1)
 MY_MASTERNODES=(
-237fdf83eff8ec26dce4c2c6966e1363a5a311b1a2a8f6d5a61e2516fed70d83
-f2f0400ecc79c2e2944c5af879c9de434e637edd79fc8b85820d86ebc6c70f47
+25e195c12334573e6f19505155efd12f4c22535a504f78ab40770de99fc10126
+a3cf9812bf59e07befe144e46dca847a2ca12e23360c8a8a4004323820003e9e
+1779a6d273177531dd7fbb397b609ccffdbe391adae8f1bdcc4c7b002c29658a
+d38fb2f9303b578b1d47d726581c83291c661bef7291eeb017f32390d160b640
+4797d47cfffae5f0b200f4964f76d824f16fc8ff0569f248049e47ac67469ea7
+4a450b8c0a2c4615cc9f6bf35689f534e4cc75335a443f85b5deb977af78919d
+75d3bf6b4d6a5844bef4fd7dc21953ebaeddfac50a8c8d25ec8bb7aef4f0b72f
+e5deb272685095cb4ce916337a86f4cf41ac3e747a1cf6294906a0821aaab5a3
 )
 # Checks that the required software is installed on this machine.
 bc -v >/dev/null 2>&1 || progs+=" bc"
@@ -125,8 +132,6 @@ totalBalance=0
 for i in ${!ARRAY_PAYOUT_ADDRESS[@]}; 
 do
 	totalBalance=$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )")
-# 	$(bc<<<"scale=1;$totalBalance+$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=${ARRAY_PAYOUT_ADDRESS[$i]}")/1" )") > ./tmp/totalBalance
-
 done
 ######
 height=$(dash-cli getblockcount)
@@ -153,7 +158,7 @@ echo "myMN_LastPaidHeigh= $myMN_LastPaidHeigh"
 	if [ "$myMN_LastPaidHeigh" -eq 0 ];then
 		lastPaid_text="Выплаты еще не было \n"
 	else	
-	myMN_LastPaidTime=$(echo "$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getblocktime&height=$myMN_LastPaidHeigh")")
+	myMN_LastPaidTime=$(echo "$(dash-cli getblock $( dash-cli getblockhash $myMN_LastPaidHeigh) | jq -r  .time)")
 echo "myMN_LastPaidTime=$myMN_LastPaidTime"
 	l=$(( $nowEpoch - $myMN_LastPaidTime ))
 		((sec=l%60, l/=60, min=l%60, l/=60, hrs=l%24, l/=24, day=l%24))
