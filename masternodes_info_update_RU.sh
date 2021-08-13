@@ -156,8 +156,8 @@ echo "читаем информацию о выплате"
 done < <(jq -r '.[]|"\(.height) \(.blockhash) \(.masternodes[] | .proTxHash) \(.masternodes[] | .payees[0] | .address) \(.masternodes[] | .payees[0] | .amount)"' <<< "$dataPayments")
     title=$(echo -e "MN$pass_myMN_num $ip\nProTx-$myMN_cutProTxHash*")
 	pymentAmountDash=$(echo "scale=1;$amount/100000000" | bc  )  
-	totalBalance=$(echo "( $3 + $pymentAmountDash)" | bc )
-# 	echo "totalBalance_2_162=$totalBalance"
+	totalBalance=$(echo "( $4 + $pymentAmountDash)" | bc )
+# 	echo "totalBalance=$totalBalance"
 	mnBalance=$(echo "( $3 + $pymentAmountDash )" | bc )
 	message=$(echo -e "Зачислено $pymentAmountDash Dash в текущем блоке $height\nБаланс $mnBalance/$totalBalance Dash  1Dash=$rateDashUSD$")
 	curl -s \

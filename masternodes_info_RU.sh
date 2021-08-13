@@ -11,7 +11,9 @@ d38fb2f9303b578b1d47d726581c83291c661bef7291eeb017f32390d160b640
 4a450b8c0a2c4615cc9f6bf35689f534e4cc75335a443f85b5deb977af78919d
 75d3bf6b4d6a5844bef4fd7dc21953ebaeddfac50a8c8d25ec8bb7aef4f0b72f
 e5deb272685095cb4ce916337a86f4cf41ac3e747a1cf6294906a0821aaab5a3
-)
+b809e32118de93843bb2a2f0653590352328e8bcdbfa4d9ad62d3bb4258d5b7a
+50dc85a3954b896724bfb67ee73076ce4db4d50d1055be77f172e23917d04d50
+ )
 # Checks that the required software is installed on this machine.
 bc -v >/dev/null 2>&1 || progs+=" bc"
 jq -V >/dev/null 2>&1 || progs+=" jq"
@@ -84,21 +86,23 @@ endLastPaidHeight=$(echo "$(sort -k1 ./tmp/block_ip)" | (awk 'NR == 1{print $1}'
 firstLastPaidHeight=$(echo "$(sort -k1 ./tmp/block_ip)"  | sed '$!d' | awk '{ print $1 }')
 no_blocks_in_queue=$(( $echo $firstLastPaidHeight - $endLastPaidHeight + 1 ))	
 echo "$(sort -k1 ./tmp/block_ip)" | awk '{ print $_ " " ( '$endLastPaidHeight' + '$no_blocks_in_queue' + 'i++') }' > ./tmp/sorted_block_ip
-
+# содаем массив мастернод сос статусом PoSeBanned (proTxHash ipPort)
 ARRAY_POSEBAN_IP=()
 while IFS= read -r line; do
 	ARRAY_POSEBAN_IP+=( "$line" )
 done <  ./tmp/poseban_ip
-
+# из моих (MY_MASTERNODES) мастернод, удаляем которых нет в блокчейне , новый массив (MN_FILTERED)
 MN_FILTERED=($(dash-cli protx list|jq -r '.[]'|grep $(sed 's/ /\\|/g'<<<"${MY_MASTERNODES[@]}" )))
+# опять проверяем список MY_MASTERNODES на статус PoSeBann и отсутствие в блокчейне, 
+# и в конце скрипта отправляем сообщение о мастернодах со станусом "не найдена!" и "PoSeBanned!"
 sorted_block_ip=$(cat ./tmp/sorted_block_ip)
 for (( n=0; n < ${#MY_MASTERNODES[*]}; n++ ))
-do	
+do 
 	m=$(( $n+1 ))
 	##### попутно присваиваем моим мастернодам номер в списке.
 	echo  "${MY_MASTERNODES[n]}" | awk '{ print $_ " " ( '$n'+1 ) }' >> ./tmp/myMN_num
 	myMN_cutProTxHash=$(echo ${MY_MASTERNODES[$n]} | cut -c1-4 )
-	#####
+	##### 
 	if [[ " ${ARRAY_POSEBAN_IP[@]} " =~ " ${MY_MASTERNODES[$n]} " ]]; then
 		myMN_PoSeBanIP=$(echo "${ARRAY_POSEBAN_IP[n]}" | awk '{ print $2 }')
 		BODY+="MN($m) $myMN_PoSeBanIP ProTx($myMN_cutProTxHash***) PoSeBanned!\n" 
@@ -110,7 +114,9 @@ do
 		fi
 	fi
 done
+#
 myMN_num=$(cat ./tmp/myMN_num)
+# корректируем массив MN_FILTERED, удаляем масттерноды со статусом PoSeBan
 for i in "${MN_FILTERED[@]}"; do
     skip=
     for j in "${ARRAY_POSEBAN_IP[@]}"; do

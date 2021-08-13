@@ -5,7 +5,7 @@ MY_MASTERNODES=(
 237fdf83eff8ec26dce4c2c6966e1363a5a311b1a2a8f6d5a61e2516fed70d83
 f2f0400ecc79c2e2944c5af879c9de434e637edd79fc8b85820d86ebc6c70f47
 )
-# Checks that the required software is installed on this machine.
+# Checks that the required software is installed on this machine 
 bc -v >/dev/null 2>&1 || progs+=" bc"
 jq -V >/dev/null 2>&1 || progs+=" jq"
 
