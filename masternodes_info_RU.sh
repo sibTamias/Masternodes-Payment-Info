@@ -3,16 +3,14 @@
 
 # MY_MASTERNODES=($1)
 MY_MASTERNODES=(
-25e195c12334573e6f19505155efd12f4c22535a504f78ab40770de99fc10126
-a3cf9812bf59e07befe144e46dca847a2ca12e23360c8a8a4004323820003e9e
-1779a6d273177531dd7fbb397b609ccffdbe391adae8f1bdcc4c7b002c29658a
-d38fb2f9303b578b1d47d726581c83291c661bef7291eeb017f32390d160b640
-4797d47cfffae5f0b200f4964f76d824f16fc8ff0569f248049e47ac67469ea7
-4a450b8c0a2c4615cc9f6bf35689f534e4cc75335a443f85b5deb977af78919d
-75d3bf6b4d6a5844bef4fd7dc21953ebaeddfac50a8c8d25ec8bb7aef4f0b72f
-e5deb272685095cb4ce916337a86f4cf41ac3e747a1cf6294906a0821aaab5a3
-b809e32118de93843bb2a2f0653590352328e8bcdbfa4d9ad62d3bb4258d5b7a
- 50dc85a3954b896724bfb67ee73076ce4db4d50d1055be77f172e23917d04d50
+7d8cbe202440dadcf2592a3c1786bc6792832ff6e3697d27585cb3adbd9272f8
+a0e40e35e1c75b7132f8f1e9d2714421a0df10f38975d0f55f7f6012dd081a7e
+233f109446f91a054999f2ec3a76fb8e2193ebb5723fce9e3fb388bd7d91179b
+41ba88a75b38ea127db7436ec380dadca341f1f9570afb6437481b3a1f73a935
+23af73b3e5e8015f019841bbd04895630876d730aa44cedd52fe8b0631c25130
+523f7c4a249699b376bee65ac902d9d5b4a91e050aacc895cad58cccf0777252
+6c50b2d79aecadb3925657b5b16d4ff8db8946b7a30ad3086b723cce65a278fc
+3a1b85f3828892a5b6ba82d1c79966dfb7dc46ec94068dda6af2fe4067f319d6
  )
 # Checks that the required software is installed on this machine.
 bc -v >/dev/null 2>&1 || progs+=" bc"
@@ -188,12 +186,15 @@ do
 	myMN_cutProTxHash=$(echo ${MN_FILTERED[$n]} | cut -c1-4 )
 	nowEpoch=`date +%s`
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
-	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
+# 	myMN_balance=$(printf %.1f $(echo "$(dash-cli getaddressbalance '{"addresses": ["'$myMN_payoutAddress'"]}' | jq -r .balance)/100000000" | bc -l))
+ 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
 	averageBlockTime=157.5
+	myMN_balance_usd=$(printf %.1f $(echo "$myMN_balance*$rateDashUSD" | bc -l))
+	totalBalance_usd=$(printf %.1f $(echo "$totalBalance*$rateDashUSD" | bc -l))
 ####### RU
 # echo "myMN_LastPaidHeigh= $myMN_LastPaidHeigh"
 	if [ "$myMN_LastPaidHeigh" -eq 0 ];then
-		lastPaid_text="Выплаты еще не было \n"
+		lastPaid_text="Выплаты еще не было"
 	else	
 	myMN_LastPaidTime=$(echo "$(dash-cli getblock $( dash-cli getblockhash $myMN_LastPaidHeigh) | jq -r  .time)")
 # echo "myMN_LastPaidTime=$myMN_LastPaidTime"
@@ -250,14 +251,14 @@ do
 			let _left=60-$_done  
 			_done=$(printf "%${_done}s")
 			_left=$(printf "%${_left}s")
-	echo "$myMN_NewPaidHeigh TITLE MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE $d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%\n$lastPaid_text\nБаланс: $myMN_balance/$totalBalance Dash   1Dash=$rateDashUSD$" >> ./tmp/allvar
+	echo "$myMN_NewPaidHeigh TITLE MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE $d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%\n$lastPaid_text\nБаланс: $myMN_balance($myMN_balance_usd$)/$totalBalance($totalBalance_usd$)\nКурс:1Dash=$rateDashUSD$" >> ./tmp/allvar
 done
 ########
 cat ./tmp/allvar | sort -t " " -rk1 >  ./tmp/sort_allvar 
 while IFS= read -r line
 do
-	title=$(echo -e "$(echo  "$line" | sed 's/^.*TITLE// ; s/MESSEGE.*//')")
-	message=$(echo -e "$(echo "$line" | sed 's/^.*MESSEGE//')")
+	title=$(echo -e "$(echo  "$line" | sed 's/^.*TITLE// ; s/MESSEGE.*//')") # внутренний echo извлекает текст между TITLE - MESSEGE, второй выполняет переводы строк - "\n"
+	message=$(echo -e "$(echo "$line" | sed 's/^.*MESSEGE//')") #  внутренний echo извлекает текст после MESSEGE , второй выполняет переводы строк - "\n
 
   curl -s \
 	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
