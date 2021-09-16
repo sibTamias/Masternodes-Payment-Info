@@ -3,15 +3,14 @@
 
 # MY_MASTERNODES=($1)
 MY_MASTERNODES=(
-7d8cbe202440dadcf2592a3c1786bc6792832ff6e3697d27585cb3adbd9272f8
-a0e40e35e1c75b7132f8f1e9d2714421a0df10f38975d0f55f7f6012dd081a7e
-233f109446f91a054999f2ec3a76fb8e2193ebb5723fce9e3fb388bd7d91179b
-41ba88a75b38ea127db7436ec380dadca341f1f9570afb6437481b3a1f73a935
-23af73b3e5e8015f019841bbd04895630876d730aa44cedd52fe8b0631c25130
-523f7c4a249699b376bee65ac902d9d5b4a91e050aacc895cad58cccf0777252
-6c50b2d79aecadb3925657b5b16d4ff8db8946b7a30ad3086b723cce65a278fc
-3a1b85f3828892a5b6ba82d1c79966dfb7dc46ec94068dda6af2fe4067f319d6
- )
+15ae6a9dc8cd00b971cfbe284984a01f4b4a12d1a234552f186eff94cebad3f4
+ee8cc0fd97a725dab1f211f098b158a84e40c4f47e19d7133dbf8ca6c14098c5
+60cd855c3e37c7d3ad3faccb013c5da1296b570b8b40944ca37159094b31ab42
+e4f5ae338e3daa6f5c4ef8613f88fc3f2c3f9d14ceab7f6f32e95450cda905d6
+7f82e58810c86f5cff8f70581140d76b3f7e22b2fcb1030bf206a90df39415ee
+b809e32118de93843bb2a2f0653590352328e8bcdbfa4d9ad62d3bb4258d5b7a
+)
+
 # Checks that the required software is installed on this machine.
 bc -v >/dev/null 2>&1 || progs+=" bc"
 jq -V >/dev/null 2>&1 || progs+=" jq"
@@ -52,6 +51,7 @@ fi
 > ./tmp/myMN_num
 > ./tmp/allvar
 > ./tmp/all_messeges
+
 
 # функция перевода секунд в часы минуты секунды для строки 105
 convertsecs() {
@@ -183,11 +183,12 @@ do
 	myMN_LastPaidHeigh=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $5 }')
 	myMN_NewPaidHeigh=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $6 }') 
 	myMN_payoutAddress=$(echo $infoMyMN_QeuePositionToPayment | awk '{ print $3 }')
-	myMN_cutProTxHash=$(echo ${MN_FILTERED[$n]} | cut -c1-4 )
+	myMN_cutPayoutAddress=$(echo $myMN_payoutAddress | cut -c1-4)
+	myMN_cutProTxHash=$(echo ${result[$n]} | cut -c1-4 )
 	nowEpoch=`date +%s`
 	rateDashUSD=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=ticker.usd")/1" | bc -l  )
-# 	myMN_balance=$(printf %.1f $(echo "$(dash-cli getaddressbalance '{"addresses": ["'$myMN_payoutAddress'"]}' | jq -r .balance)/100000000" | bc -l))
- 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
+	myMN_balance=$(printf %.1f $(echo "$(dash-cli getaddressbalance '{"addresses": ["'$myMN_payoutAddress'"]}' | jq -r .balance)/100000000" | bc -l))
+# 	myMN_balance=$(echo "scale=1;$(curl -Ls "https://chainz.cryptoid.info/dash/api.dws?q=getbalance&a=$myMN_payoutAddress")/1" | bc -l  )
 	averageBlockTime=157.5
 	myMN_balance_usd=$(printf %.1f $(echo "$myMN_balance*$rateDashUSD" | bc -l))
 	totalBalance_usd=$(printf %.1f $(echo "$totalBalance*$rateDashUSD" | bc -l))
@@ -209,7 +210,7 @@ do
 		else
 			myMN_lastPaidTstamp=$(printf "%dд" $day )	# если дней >0 то выводим дни 
 		fi
-	lastPaid_text="Выплата была $myMN_lastPaidTstamp назад в блоке $myMN_LastPaidHeigh"
+	lastPaid_text="Выплата была $myMN_lastPaidTstamp назад (#$myMN_LastPaidHeigh)"
 	fi
 		mn_blocks_till_pyment=$(( $myMN_NewPaidHeigh - $height ))
 		f=$(echo "scale=0;$mn_blocks_till_pyment*$averageBlockTime/1"  | bc) # сек до выплаты
@@ -219,7 +220,7 @@ do
 			if [ "$PayTimeTilllMidnight" -lt 0 ]; then # если <0 , то выплата до плоyночи сегодня
 				d="Выплата сегодня в"
 				myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-				line_one="блок"
+				line_one="#"
 				secTillPayment=$(( $myMN_NewPaidTime- $nowEpoch )) 
 				if [ $secTillPayment -lt 14400 ]; then				
 				BODY+="MN$pass_myMN_num - выплата через $(convertsecs $secTillPayment)"		
@@ -228,7 +229,7 @@ do
 			else 
 				if [ "$PayTimeTilllMidnight" -gt 172800 ]; then   # если >24 часа т е за послезавтра )
 					unset d 
-					line_one="до выплаты в блоке"
+					line_one="до выплаты (#"
 					((sec=f%60, f/=60, min=f%60, f/=60, hrs=f%24, f/=24, day=f%24))
 						if [ "$day" -gt 4 ]; then
 					myMN_leftTillPaymentTstamp=$(printf "%d дней" $day)
@@ -237,21 +238,26 @@ do
 						fi
 				else
 					if [ "$PayTimeTilllMidnight" -gt 86400 ]; then
-						d="Выплата послезавтра в"
+						d="выплата п/завтра в "
 						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-						line_one="в блоке"
+						line_one="(#"
 					else
-						d="Выплата завтра в"
+						d="Выплата завтра в "
 						myMN_leftTillPaymentTstamp=$(perl -le 'print scalar localtime $ARGV[0]' $myMN_NewPaidTime | awk '{ print $4 }' | sed -e "s/.\{,3\}$//")
-						line_one="в блоке"
+						line_one="(#"
 					fi
 				fi
 			fi	
-			let _done=($percentInt*6)/10 
-			let _left=60-$_done  
+			let _done=($percentInt*3)/10 
+			let _left=30-$_done  
 			_done=$(printf "%${_done}s")
 			_left=$(printf "%${_left}s")
-	echo "$myMN_NewPaidHeigh TITLE MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE $d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%\n$lastPaid_text\nБаланс: $myMN_balance($myMN_balance_usd$)/$totalBalance($totalBalance_usd$)\nКурс:1Dash=$rateDashUSD$" >> ./tmp/allvar
+# 	echo "$myMN_NewPaidHeigh TITLE MN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE $d $myMN_leftTillPaymentTstamp $line_one $myMN_NewPaidHeigh\n[${_done// /|}${_left// /:}] $percentInt%\n$lastPaid_text\nБаланс: $myMN_balance($myMN_balance_usd$)/$totalBalance($totalBalance_usd$)\nКурс:1Dash=$rateDashUSD$" >> ./tmp/allvar
+
+# echo "$myMN_NewPaidHeigh TITLEMN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE$d$myMN_leftTillPaymentTstamp $line_one$myMN_NewPaidHeigh)\n${_done// /🁢}${_left// /🁣}$percentInt%\n$lastPaid_text\nБаланс: $myMN_balance($myMN_balance_usd$)/$totalBalance($totalBalance_usd$)\nКурс:1Dash=$rateDashUSD$" >> ./tmp/allvar
+
+echo "$myMN_NewPaidHeigh TITLEMN$pass_myMN_num позиция $position/$totalAmountMN\n$ip ProTx-$myMN_cutProTxHash* MESSEGE$d$myMN_leftTillPaymentTstamp $line_one$myMN_NewPaidHeigh)\n${_done// /🁢}${_left// /🁣}$percentInt%\n$lastPaid_text\nБаланс($myMN_cutPayoutAddress***): $myMN_balance"Dash"/$myMN_balance_usd$" >> ./tmp/allvar
+
 done
 ########
 cat ./tmp/allvar | sort -t " " -rk1 >  ./tmp/sort_allvar 
@@ -259,21 +265,42 @@ while IFS= read -r line
 do
 	title=$(echo -e "$(echo  "$line" | sed 's/^.*TITLE// ; s/MESSEGE.*//')") # внутренний echo извлекает текст между TITLE - MESSEGE, второй выполняет переводы строк - "\n"
 	message=$(echo -e "$(echo "$line" | sed 's/^.*MESSEGE//')") #  внутренний echo извлекает текст после MESSEGE , второй выполняет переводы строк - "\n
-
-  curl -s \
-	  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
-	  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+	  curl -s \
+	  --form-string "token=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+	  --form-string "user=af3ktxxxxxxxxxxxxy6tyvfvfh" \
 	  --form-string "sound=bike" \
 	  --form-string "title=$title" \
 	  --form-string "message=$message" \
-  	https://api.pushover.net/1/messages.json &> /dev/null   
+	https://api.pushover.net/1/messages.json &> /dev/null 
+	
+  
+#   curl -s \
+# 	  --form-string "token=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+# 	  --form-string "user=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+# 	  --form-string "sound=bike" \
+# 	  --form-string "title=$title" \
+# 	  --form-string "html=1" \
+# 	  --form-string "message=<b><font color="#0000ff">$message</font></b>" \
+#   	https://api.pushover.net/1/messages.json &> /dev/null   
   sleep 1
 done < ./tmp/sort_allvar 
 
+	title1=$(echo -e "Курс: 1Dash=$rateDashUSD$")	
+	message1=$(echo -e "Общий баланс ${#MN_FILTERED[*]} мастернод :\n$totalBalance"Dash"/$totalBalance_usd$")
+ 	curl -s \
+	  --form-string "token=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+	  --form-string "user=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+	  --form-string "sound=bike" \
+	  --form-string "title=$title1" \
+	  --form-string "html=1" \
+	  --form-string "message=$message1" \
+	https://api.pushover.net/1/messages.json &> /dev/null 
+  
+  
 warning=$(printf "$BODY")
 curl -s \
-  --form-string "token=af3ktr7qch93wws14b6pxy6tyvfvfh" \
-  --form-string "user=u69uin39geyd7w4244sfbws6abd1wn" \
+  --form-string "token=af3ktxxxxxxxxxxxxy6tyvfvfh" \
+  --form-string "user=u69uixxxxxxxxxsfbws6abd1wn" \
   --form-string "sound=bike" \
   --form-string "title=Warning!" \
   --form-string "message=$warning" \
